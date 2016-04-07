@@ -5,7 +5,7 @@ OBJCOPY = xtensa-lx106-elf-objcopy
 CFLAGS = -I. -Iuser -Iinclude -Iinclude/driver -Icpp_routines -Istltest -ffunction-sections -fdata-sections -nostdlib -mlongcalls -mtext-section-literals
 CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions -std=c++11
 LD       := $(CXX)
-LDLIBS = -nostdlib -Wl,--start-group -lmain -lnet80211 -lwpa -llwip -lpp -lphy -lcirom -lstdc++irom -lnlport -Wl,--end-group -lgcc
+LDLIBS = -nostdlib -Wl,--start-group -lmain -lnet80211 -lwpa -llwip -lpp -lphy -lcirom -lstdc++irom -lnewlibport -Wl,--end-group -lgcc
 LDFLAGS = -Teagle.app.v6.new.2048.irom.ld -nostdlib -Wl,--no-check-sections -u call_user_start -Wl,-static -Wl,-gc-sections
 
 %1/%.o: %.c
@@ -255,15 +255,15 @@ sgitests-0x01000.bin: sgitests
 	esptool.py elf2image --version=2 --flash_freq 40m --flash_size 32m-c1 -o $@ $^
 # -o $@
 
-sgitests: sgitests.a
+sgitests: sgitestsirom.a
 	$(CC) $(LDFLAGS) -Wl,-Map=$@.map -Wl,--start-group $(LDLIBS) $^ -Wl,--end-group -o $@
 
-sgitests.a: $(obj)
+sgitestsirom.a: $(obj)
 	$(AR) cru $@ $^
 
-flash: sgitests-0x01000.bin
+flash: sgitests-0x1000.bin
 	esptool.py write_flash 0x1000 sgitests-0x01000.bin
 
 clean:
-	rm -f sgitests.map sgitests.a sgitests $(obj) sgitests-0x01000.bin
+	rm -f sgitests.map sgitestsirom.a sgitests $(obj) sgitests-0x01000.bin
 
