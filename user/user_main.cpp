@@ -1,7 +1,7 @@
 #ifdef GDBDEBUG
 #include "gdbstub.h"
 #endif
-#include "routines.h"
+#include "cpp_routines.h"
 #include "stl_test.h"
 extern "C"
 {

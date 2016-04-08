@@ -2,10 +2,10 @@ CC = xtensa-lx106-elf-gcc
 CXX = xtensa-lx106-elf-g++
 AR = xtensa-lx106-elf-ar
 OBJCOPY = xtensa-lx106-elf-objcopy
-CFLAGS = -I. -Iuser -Iinclude -Iinclude/driver -Icpp_routines -Istltest -ffunction-sections -fdata-sections -nostdlib -mlongcalls -mtext-section-literals
+CFLAGS = -I. -Iuser -Iinclude -Iinclude/driver -Istltest -ffunction-sections -fdata-sections -nostdlib -mlongcalls -mtext-section-literals
 CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions -std=c++11
 LD       := $(CXX)
-LDLIBS = -nostdlib -Wl,--start-group -lmain -lnet80211 -lwpa -llwip -lpp -lphy -lcirom -lstdc++irom -lnewlibport -Wl,--end-group -lgcc
+LDLIBS = -nostdlib -Wl,--start-group -lmain -lnet80211 -lwpa -llwip -lpp -lphy -lcirom -lstdc++irom -lnewlibport -lstdc++port -Wl,--end-group -lgcc
 LDFLAGS = -Teagle.app.v6.new.2048.irom.ld -nostdlib -Wl,--no-check-sections -u call_user_start -Wl,-static -Wl,-gc-sections
 
 %1/%.o: %.c
@@ -244,7 +244,6 @@ stltest/set1.cpp \
 stltest/nextprm2.cpp \
 stltest/mset3.cpp \
 stltest/bnegate2.cpp \
-cpp_routines/routines.cpp \
 user/user_main.cpp \
 driver/uart.c 
 
