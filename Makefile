@@ -260,17 +260,17 @@ obj := $(src:.c=.o)
 obj := $(obj:.cpp=.o)
 
 sgitests-bins: sgitests
-	echo "Run objcopy, please wait..."
+	@echo "Run objcopy, please wait..."
 	@$(OBJCOPY) --only-section .text -O binary $< eagle.app.v7.text.bin
 	@$(OBJCOPY) --only-section .data -O binary $< eagle.app.v7.data.bin
 	@$(OBJCOPY) --only-section .rodata -O binary $< eagle.app.v7.rodata.bin
 	@$(OBJCOPY) --only-section .irom0.text -O binary $< eagle.app.v7.irom0text.bin
 	@$(OBJCOPY) --only-section .drom0.text -O binary $< eagle.app.v7.drom0text.bin
-	rm -f irom0_flash.bin irom1.bin
-	echo "objcopy done"
-	echo "launching gen_appbin"
-	gen_appbin.py $< $(LDDIR)/$(LDSCRIPT) 0 0 . .
-	echo "Done"
+	@rm -f irom0_flash.bin drom1.bin user.ota
+	@echo "objcopy done"
+	@echo "launching gen_appbin"
+	@gen_appbin.py $< $(LDDIR)/$(LDSCRIPT) 0 0 . .
+	@echo "Done"
 
 sgitests: sgitests.a
 	$(CC) $(LDFLAGS) -Wl,-Map=$@.map -Wl,--start-group $(LDLIBS) $^ -Wl,--end-group -o $@
@@ -278,8 +278,8 @@ sgitests: sgitests.a
 sgitests.a: $(obj)
 	$(AR) cru $@ $^
 
-flash: sgitests-0x1000.bin
-	esptool.py write_flash 0x1000 sgitests-0x01000.bin
+flash: sgitests-bins
+	esptool.py write_flash --flash_freq 40m --flash_mode qio --flash_size 2MB 0x04000 drom0.bin 0x40000 irom0_flash.bin	
 
 clean:
 	rm -f sgitests.map sgitests.a sgitests $(obj) *.bin user.ota
