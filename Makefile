@@ -1,12 +1,22 @@
-CC = xtensa-lx106-elf-gcc
-CXX = xtensa-lx106-elf-g++
-AR = xtensa-lx106-elf-ar
-OBJCOPY = xtensa-lx106-elf-objcopy
-CFLAGS = -I. -Iuser -Iinclude -Iinclude/driver -Istltest -ffunction-sections -fdata-sections -nostdlib -mlongcalls -mtext-section-literals
-CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions -std=c++11
+CC = xtensa-esp108-elf-gcc
+CXX = xtensa-esp108-elf-g++
+AR = xtensa-esp108-elf-ar
+OBJCOPY = xtensa-esp108-elf-objcopy
+SYSROOT = $(shell $(CC) --print-sysroot)
+SYSROOT_HEADERS = $(SYSROOT)/usr/include
+CFLAGS = -I. -Iuser -Istltest \
+            -I$(SYSROOT_HEADERS)/lwip         \
+            -I$(SYSROOT_HEADERS)/lwip/ipv4    \
+            -I$(SYSROOT_HEADERS)/lwip/ipv6    \
+            -I$(SYSROOT_HEADERS)/espressif    \
+            -ffunction-sections -fdata-sections -nostdlib -mlongcalls -mtext-section-literals
+CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 LD       := $(CXX)
-LDLIBS = -nostdlib -Wl,--start-group -lmain -lnet80211 -lwpa -llwip -lpp -lphy -lcirom -lstdc++irom -lnewlibport -lstdc++port -Wl,--end-group -lgcc
-LDFLAGS = -Teagle.app.v6.new.2048.irom.ld -nostdlib -Wl,--no-check-sections -u call_user_start -Wl,-static -Wl,-gc-sections
+LDLIBS = -nostdlib -Wl,--start-group -lmain -lfreertos -lnet80211 -lwpa -llwip -lpp -lphy -lcrypto -lhal -lrtc -lstdc++port -lstdc++ -lc -lnewlibport -lm  -Wl,--end-group -lgcc
+LDSCRIPT = pro.map1.1.ld
+LDROMSCRIPT = pro.rom.addr.ld
+LDDIR = $(SYSROOT)/usr/lib
+LDFLAGS = -T$(LDSCRIPT) -T$(LDROMSCRIPT) -nostdlib -Wl,--no-check-sections -u call_user_start -Wl,-static -Wl,-gc-sections
 
 %1/%.o: %.c
 	$(CC) $(CFLAGS) -std=gnu90 -c $$< -o $$@
@@ -244,25 +254,33 @@ stltest/set1.cpp \
 stltest/nextprm2.cpp \
 stltest/mset3.cpp \
 stltest/bnegate2.cpp \
-user/user_main.cpp \
-driver/uart.c 
+user/user_main.cpp 
 
 obj := $(src:.c=.o)
 obj := $(obj:.cpp=.o)
 
-sgitests-0x01000.bin: sgitests
-	esptool.py elf2image --version=2 --flash_freq 40m --flash_size 32m-c1 -o $@ $^
-# -o $@
+sgitests-bins: sgitests
+	echo "Run objcopy, please wait..."
+	@$(OBJCOPY) --only-section .text -O binary $< eagle.app.v7.text.bin
+	@$(OBJCOPY) --only-section .data -O binary $< eagle.app.v7.data.bin
+	@$(OBJCOPY) --only-section .rodata -O binary $< eagle.app.v7.rodata.bin
+	@$(OBJCOPY) --only-section .irom0.text -O binary $< eagle.app.v7.irom0text.bin
+	@$(OBJCOPY) --only-section .drom0.text -O binary $< eagle.app.v7.drom0text.bin
+	rm -f irom0_flash.bin irom1.bin
+	echo "objcopy done"
+	echo "launching gen_appbin"
+	gen_appbin.py $< $(LDDIR)/$(LDSCRIPT) 0 0 . .
+	echo "Done"
 
-sgitests: sgitestsirom.a
+sgitests: sgitests.a
 	$(CC) $(LDFLAGS) -Wl,-Map=$@.map -Wl,--start-group $(LDLIBS) $^ -Wl,--end-group -o $@
 
-sgitestsirom.a: $(obj)
+sgitests.a: $(obj)
 	$(AR) cru $@ $^
 
 flash: sgitests-0x1000.bin
 	esptool.py write_flash 0x1000 sgitests-0x01000.bin
 
 clean:
-	rm -f sgitests.map sgitestsirom.a sgitests $(obj) sgitests-0x01000.bin
+	rm -f sgitests.map sgitests.a sgitests $(obj) *.bin user.ota
 
