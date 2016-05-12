@@ -9,14 +9,14 @@ CFLAGS = -I. -Iuser -Istltest \
             -I$(SYSROOT_HEADERS)/lwip/ipv4    \
             -I$(SYSROOT_HEADERS)/lwip/ipv6    \
             -I$(SYSROOT_HEADERS)/espressif    \
-            -ffunction-sections -fdata-sections -nostdlib -mlongcalls -mtext-section-literals
+            -ffunction-sections -fdata-sections -nostdlib -mlongcalls -mtext-section-literals -mno-serialize-volatile -D__ets__ -DICACHE_FLASH 
 CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 LD       := $(CXX)
 LDLIBS = -nostdlib -Wl,--start-group -lmain -lfreertos -lnet80211 -lwpa -llwip -lpp -lphy -lcrypto -lhal -lrtc -lstdc++port -lstdc++ -lc -lnewlibport -lm  -Wl,--end-group -lgcc
 LDSCRIPT = pro.map1.1.ld
 LDROMSCRIPT = pro.rom.addr.ld
 LDDIR = $(SYSROOT)/usr/lib
-LDFLAGS = -T$(LDSCRIPT) -T$(LDROMSCRIPT) -nostdlib -Wl,--no-check-sections -u call_user_start -Wl,-static -Wl,-gc-sections
+LDFLAGS = -T$(LDSCRIPT) -T$(LDROMSCRIPT) -nostdlib -Wl,--no-check-sections -u call_user_start -Wl,-static
 
 %1/%.o: %.c
 	$(CC) $(CFLAGS) -std=gnu90 -c $$< -o $$@
